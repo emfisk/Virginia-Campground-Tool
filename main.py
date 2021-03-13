@@ -7,6 +7,7 @@ import requests
 from tkcalendar import DateEntry
 from tkinter import filedialog
 import datetime
+from fake_useragent import UserAgent
 root = Tk()
 root.title("Virginia Campground Tool")
 astgvar = IntVar()
@@ -14,7 +15,7 @@ morrishillvar = IntVar()
 bigmeadowvar = IntVar()
 trailerlength = IntVar()
 numofpeople = IntVar()
-from fake_useragent import UserAgent
+
 
 headers = {"User-Agent": UserAgent().random}
 
@@ -22,12 +23,15 @@ def outtofile(outdata):
  name=filedialog.asksaveasfile()
  if name is None:
   return
+ name.write(str(datetime.datetime.now()))
+ name.write("\n-----------------------\n")
  name.write(outdata)
+ name.write("\n-----------------------\n")
  name.close()
 
 def clicked():
     resultscreen = Tk()
-    resultscreen.title("Result screen")
+    resultscreen.title("Result screen "+str(datetime.datetime.now()))
     scrollbar = Scrollbar(resultscreen)
     scrollbar.pack( side = RIGHT, fill = Y )
     try:
@@ -60,17 +64,12 @@ def clicked():
         for month in monthcount:
             astgdata.append(requests.get(url="https://www.recreation.gov/api/camps/availability/campground/232507/month?",params={'start_date':month},headers=headers).json())
         for astginfo in astgdata:
-            if "error" in astginfo:
-                outdata.insert(END,"You entered dates that are in the past or otherwise wrong. Try again.")
-                outdatatext+="You entered dates that are in the past or otherwise wrong. Try again.\n"
-                return False
-            else:
-                 print(astginfo["campsites"]["5698"].keys())
                  for key in astginfo["campsites"].keys():
                      for date in astginfo["campsites"][key]["availabilities"].keys():
                          if checkindate.get_date()<=datetime.datetime.strptime(date,"%Y-%m-%dT00:00:00Z").date()<=checkoutdate.get_date() and astginfo["campsites"][key]["availabilities"][date]=="Available" and int(astginfo["campsites"][key]["max_num_people"])>=numofpeople.get():
                             astgoutdata.insert(END,date+" "+key+" is availabe\n")
                             outdatatext+=date+" "+key+" is availabe\n"
+                            results+=1
         astgoutdata.pack(side=LEFT,fill=BOTH)
     if morrishillvar.get():
         morrishilloutdata= Listbox(resultscreen, yscrollcommand = scrollbar.set,width=50 )
@@ -79,11 +78,6 @@ def clicked():
         for month in monthcount:
             morrishilldata.append(requests.get(url="https://www.recreation.gov/api/camps/availability/campground/232161/month?",params={'start_date':month},headers=headers).json())
         for morrishillinfo in morrishilldata:
-            if "error" in morrishillinfo:
-                morrishilloutdata.insert(END,"You entered dates that are in the past or otherwise wrong. Try again.")
-                outdatatext+="You entered dates that are in the past or otherwise wrong. Try again.\n"
-                return False
-            else:
                  for key in morrishillinfo["campsites"].keys():
                      for date in morrishillinfo["campsites"][key]["availabilities"].keys():
                          if checkindate.get_date()<=datetime.datetime.strptime(date,"%Y-%m-%dT00:00:00Z").date()<=checkoutdate.get_date() and morrishillinfo["campsites"][key]["availabilities"][date]=="Available" and int(morrishillinfo["campsites"][key]["max_num_people"])>=numofpeople.get():
@@ -98,11 +92,6 @@ def clicked():
         for month in monthcount:
             bigmeadowdata.append(requests.get(url="https://www.recreation.gov/api/camps/availability/campground/232459/month?",params={'start_date':month},headers=headers).json())
         for bigmeadowinfo in bigmeadowdata:
-            if "error" in bigmeadowinfo:
-                bigmeadowoutdata.insert(END,"You entered dates that are in the past or otherwise wrong. Try again.")
-                outdatatext+="You entered dates that are in the past or otherwise wrong. Try again.\n"
-                return False
-            else:
                  for key in bigmeadowinfo["campsites"].keys():
                      for date in bigmeadowinfo["campsites"][key]["availabilities"].keys():
                          if checkindate.get_date()<=datetime.datetime.strptime(date,"%Y-%m-%dT00:00:00Z").date()<=checkoutdate.get_date() and bigmeadowinfo["campsites"][key]["availabilities"][date]=="Available" and int(bigmeadowinfo["campsites"][key]["max_num_people"])>=numofpeople.get():
@@ -110,7 +99,7 @@ def clicked():
                             outdatatext+=date+" "+key+" is availabe\n"
                             results+=1
         bigmeadowoutdata.pack(side=LEFT,fill=BOTH)
-    if not morrishillvar.get() and not bigmeadowvar.get() and not morrishillvar.get():
+    if not astgvar.get() and not bigmeadowvar.get() and not morrishillvar.get():
         noresultslabel=Label(resultscreen,text="You didn't specify any campgrounds, please try again")
         noresultslabel.pack()
     stringresults=str(results)+" results found"
